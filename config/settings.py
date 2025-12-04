@@ -31,5 +31,5 @@ if MONGO_USER and MONGO_PASS:
 else:
     MONGO_URI = f"mongodb://{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB}"
 
-MONGO_URI = "mongodb://localhost:27017"
+#MONGO_URI = "mongodb://localhost:27017"
 
