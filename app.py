@@ -160,6 +160,18 @@ def handle_event():
 
     return jsonify({"status": "received"}), 200
 
+@app.route("/api/refresh", methods=["POST"])
+def handle_refresh():
+    """
+    HTTP endpoint to manually trigger the daily refresh.
+    """
+    logger.info("Received manual refresh request.")
+    # Spawn a background thread to run the refresh so we don't block the response
+    t = threading.Thread(target=run_daily_refresh)
+    t.start()
+    return jsonify({"status": "refresh_triggered"}), 200
+
+
 def run_app():
     # Runs the Flask app
     app.run(host="0.0.0.0", port=5001, debug=False, use_reloader=False)
