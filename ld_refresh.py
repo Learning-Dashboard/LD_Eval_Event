@@ -6,9 +6,10 @@ from config.load_config_file        import get_event_meta, get_available_events
 from database.mongo_client         import db        
 
 API_URL       = os.getenv("EVAL_API_URL", "http://localhost:5001/api/event")
-TEAM_STUDENTS = build_team_students_map()
+
 QM_MAP        = load_qualitymodel_map()
 
+EVENT_TYPES   = ["push", "task", "userstory"]
 
 
 
@@ -30,18 +31,84 @@ def trigger_team_event(team_id: str, event_type: str) -> None:
         "quality_model": choose_qualitymodel(team_id, None, QM_MAP)
     }
     start = time.perf_counter()
-    r = requests.post(API_URL, json=payload, timeout=(0.4, 1)) #connect timeout 0.2s, read timeout 1s
-    logging.info("POST took %.3f s", time.perf_counter() - start)
+    r = requests.post(API_URL, json=payload, timeout=(0.2, 1)) #connect timeout 0.2s, read timeout 1s
+    logging.info("POST tardó %.3f s", time.perf_counter() - start)
+
     logging.info("team=%s event=%s → status=%s", team_id, event_type, r.status_code)
 
+def delete_orphan_collections_from_mongo(actual_teams):
+    for prefix in ["metrics", "factors", "strategic_indicators"]: # afegeix tots els prefixes que toquin
+        collections = db.list_collection_names()
+        for coll in collections:
+            if coll.startswith(prefix + "."):
+                team_collection = coll.split(".", 1)[1]
+                if team_collection not in actual_teams:
+                    db.drop_collection(coll)
+
+def delete_orphan_student_documents(team_students_map):
+    """
+    Elimina documentos de estudiantes que ya no existen en el mapa de estudiantes.
+    Busca en las colecciones metrics, factors y strategic_indicators.
+    """
+    for team_id, sources in team_students_map.items():
+        # Obtener lista de estudiantes válidos: incluye nombres reales (EXCEL) + usernames (GITHUB + TAIGA)
+        valid_students = []
+        valid_students.extend(sources.get("EXCEL", []))
+        valid_students.extend(sources.get("GITHUB", []))
+        valid_students.extend(sources.get("TAIGA", []))
+        
+        # Eliminar duplicados
+        valid_students = list(set(valid_students))
+        
+        logging.info(f"🧹 Limpiando estudiantes huérfanos del equipo '{team_id}'...")
+        logging.info(f"   Estudiantes válidos (nombres + usernames): {valid_students}")
+        
+        # Limpiar en cada tipo de colección
+        for prefix in ["metrics", "factors", "strategic_indicators"]:
+            collection_name = f"{prefix}.{team_id}"
+            
+            if collection_name not in db.list_collection_names():
+                continue
+                
+            collection = db[collection_name]
+            
+            # Buscar documentos con student_name que no esté en la lista de válidos
+            # Los documentos de equipo no tienen student_name, así que los ignoramos
+            orphan_docs = collection.find({
+                "student_name": {"$exists": True, "$nin": valid_students}
+            })
+            
+            deleted_count = 0
+            for doc in orphan_docs:
+                student_name = doc.get("student_name")
+                # Intentar obtener el nombre de la métrica/factor/indicador
+                item_name = doc.get("metric_name") or doc.get("factor_name") or doc.get("indicator_name") or doc.get("name", "documento")
+                
+                logging.info(f"   ❌ Eliminando '{item_name}' del estudiante '{student_name}'")
+                collection.delete_one({"_id": doc["_id"]})
+                deleted_count += 1
+            
+            if deleted_count > 0:
+                logging.info(f"   ✅ Eliminados {deleted_count} documentos huérfanos de '{collection_name}'")
 
 def run_daily_refresh() -> None:
     '''Function to run the daily refresh of events.'''
+    TEAM_STUDENTS = build_team_students_map()
+    actual_teams = list(TEAM_STUDENTS.keys())
+    
+    # 1. Eliminar colecciones de equipos que ya no existen
+    delete_orphan_collections_from_mongo(actual_teams)
+    
+    # 2. Eliminar documentos de estudiantes que ya no están en los equipos
+    # delete_orphan_student_documents(TEAM_STUDENTS)
+    
+    # 3. Recalcular métricas para todos los equipos activos
     for team in TEAM_STUDENTS.keys(): # Get all the teams from the TEAM_STUDENTS map
+        '''
         if not team_is_active(team):
-            logging.info("Team %s does not have activity we ommit", team) # If the team is not active, skip it
+            logging.info("Equipo %s sin actividad previa; se omite.", team) # If the team is not active, skip it
             continue
-        
+        '''
         events= get_available_events()
         for event in events: # If the team is active, trigger all the events
             trigger_team_event(team, event)

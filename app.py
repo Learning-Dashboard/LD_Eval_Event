@@ -1,6 +1,9 @@
+import json
+import os
 import threading
 from flask import Flask, request, jsonify
 import logging
+from datetime import datetime
 
 from logic.metrics_logic.metric_event_mapping import build_metrics_index_per_qm
 from logic.metrics_logic.metric_recalculation import compute_metric_for_student, compute_metric_for_team
@@ -45,6 +48,7 @@ ALL_INDICATORS_BY_QM,  EVENT_INDICATORS_BY_QM  = build_indicators_index_per_qm(Q
 
 # Build the team->students map at startup
 TEAM_STUDENTS_MAP = build_team_students_map()
+logging.getLogger(__name__).info("MAPA PROJECTES-ESTUDIANTS: %s", json.dumps(TEAM_STUDENTS_MAP, indent=2, ensure_ascii=False))
 TEAM_QUALITYMODEL_MAP = load_qualitymodel_map()
 
 
@@ -160,9 +164,82 @@ def handle_event():
 
     return jsonify({"status": "received"}), 200
 
+
+###################################### NEW CODE ######################################
+@app.route("/api/refresh", methods=["POST"])
+def handle_refresh():
+    """
+    HTTP endpoint per refrescar el mapa d'estudiants i recalcular mètriques.
+    Reconstrueix la variable global TEAM_STUDENTS_MAP.
+    """
+    def refresh_and_update_map():
+        global TEAM_STUDENTS_MAP
+        
+        logger.info("="*80)
+        logger.info("🔄 REFRESH INICIAT")
+        logger.info("="*80)
+        
+        # Mostrar mapa ABANS del refresh
+        logger.info("📋 MAPA ABANS DEL REFRESH:")
+        for team_id, sources in TEAM_STUDENTS_MAP.items():
+            excel_students = sources.get("EXCEL", [])
+            logger.info(f"  - {team_id}: {len(excel_students)} estudiants (EXCEL)")
+        
+        # CRÍTICO: Reconstruir el mapa global desde PostgreSQL
+        logger.info("🔄 Reconstruint TEAM_STUDENTS_MAP des de PostgreSQL...")
+        TEAM_STUDENTS_MAP = build_team_students_map()
+        
+        # Mostrar mapa DESPRÉS del refresh
+        logger.info("✅ MAPA DESPRÉS DEL REFRESH:")
+        for team_id, sources in TEAM_STUDENTS_MAP.items():
+            excel_students = sources.get("EXCEL", [])
+            logger.info(f"  - {team_id}: {len(excel_students)} estudiants (EXCEL)")
+        
+        logger.info("="*80)
+        logger.info(f"✅ Mapa actualitzat amb {len(TEAM_STUDENTS_MAP)} equips")
+        logger.info("="*80)
+        
+        # Executar refresh diari (recalcular totes les mètriques)
+        logger.info("🔄 Executant recàlcul de mètriques...")
+        run_daily_refresh()
+        logger.info("✅ Refresh completat")
+        logging.getLogger(__name__).info("MAPA PROJECTES-ESTUDIANTS AFTER REFRESH: %s", json.dumps(TEAM_STUDENTS_MAP, indent=2, ensure_ascii=False))
+    
+    threading.Thread(target=refresh_and_update_map).start()
+    return jsonify({"status": "refresh started"}), 200
+
+@app.route("/api/debug/students-map", methods=["GET"])
+def get_students_map():
+    """
+    Endpoint de debug per veure el mapa d'estudiants actual.
+    Mostra quin worker i thread gestiona la petició.
+    """
+    result = {}
+    for team_id, sources in TEAM_STUDENTS_MAP.items():
+        result[team_id] = {
+            "EXCEL": sources.get("EXCEL", []),
+            "GITHUB": sources.get("GITHUB", []),
+            "TAIGA": sources.get("TAIGA", []),
+            "total_students": len(sources.get("EXCEL", []))
+        }
+    
+    return jsonify({
+        "TEAM_STUDENTS_MAP": result,
+        "total_teams": len(TEAM_STUDENTS_MAP),
+        "timestamp": datetime.now().isoformat(),
+        # INFORMACIÓ DEL WORKER/THREAD
+        "worker_info": {
+            "process_id": os.getpid(),  # PID del worker
+            "thread_id": threading.current_thread().ident,  # ID del thread
+            "thread_name": threading.current_thread().name  # Nom del thread
+        }
+    }), 200
+
+####################################### END NEW CODE ######################################
+
 def run_app():
     # Runs the Flask app
-    app.run(host="0.0.0.0", port=5001, debug=False, use_reloader=False)
+    app.run(host="0.0.0.0", port=5001, debug=True)
 
 
 
@@ -170,10 +247,7 @@ def create_app():
     """
     Create and configure the Flask application.
     """
-    if not hasattr(app, "scheduler_started"):
-        start_scheduler()
-        app.scheduler_started = True
-    return app     
+    return app     # ← la variable que ya tienes arriba
 
 if __name__ == "__main__":
     # Run the app directly

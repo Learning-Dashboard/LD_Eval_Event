@@ -19,7 +19,7 @@ BASE_GESSI_URL = os.getenv("BASE_GESSI_URL", "")
 #Mongo database settings
 MONGO_HOST     = os.getenv("MONGO_HOST", "mongodb")
 MONGO_PORT     = os.getenv("MONGO_PORT", "27017")
-MONGO_DB       = os.getenv("MONGO_DB", "event_dashboard")
+MONGO_DB       = os.getenv("MONGO_DB", "mongo")
 MONGO_USER     = os.getenv("MONGO_USER", "")
 MONGO_PASS     = os.getenv("MONGO_PASS", "")
 MONGO_AUTHSRC  = os.getenv("MONGO_AUTHSRC", MONGO_DB)
@@ -30,6 +30,4 @@ if MONGO_USER and MONGO_PASS:
                  f"?authSource={MONGO_AUTHSRC}")
 else:
     MONGO_URI = f"mongodb://{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB}"
-
-MONGO_URI = "mongodb://localhost:27017"
 

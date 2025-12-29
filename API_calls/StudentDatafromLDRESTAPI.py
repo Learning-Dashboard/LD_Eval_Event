@@ -81,11 +81,13 @@ def build_team_students_map() -> dict:
 
             # ADDED MANUALLY TO MAKE THE TESTS WORK, REMOVE LATER
 
+    '''
     team_students_map["LD_Test_Project"] = {
         "GITHUB": ["PabloGomezNa", "PepitoGomezNa", "charlie"],
         "TAIGA": ["pgomezn", "pablogz5", "Charlie55"],
         "EXCEL": ["Pablo", "Marc", "Charlie"]
     }
+    '''
 
 
     return team_students_map
