@@ -32,9 +32,6 @@ def trigger_team_event(team_id: str, event_type: str) -> None:
     }
     start = time.perf_counter()
     r = requests.post(API_URL, json=payload, timeout=(0.2, 1)) #connect timeout 0.2s, read timeout 1s
-    logging.info("POST tardó %.3f s", time.perf_counter() - start)
-
-    logging.info("team=%s event=%s → status=%s", team_id, event_type, r.status_code)
 
 def delete_orphan_collections_from_mongo(actual_teams):
     for prefix in ["metrics", "factors", "strategic_indicators"]: # afegeix tots els prefixes que toquin
@@ -60,9 +57,6 @@ def delete_orphan_student_documents(team_students_map):
         # Eliminar duplicados
         valid_students = list(set(valid_students))
         
-        logging.info(f"🧹 Limpiando estudiantes huérfanos del equipo '{team_id}'...")
-        logging.info(f"   Estudiantes válidos (nombres + usernames): {valid_students}")
-        
         # Limpiar en cada tipo de colección
         for prefix in ["metrics", "factors", "strategic_indicators"]:
             collection_name = f"{prefix}.{team_id}"
@@ -83,13 +77,9 @@ def delete_orphan_student_documents(team_students_map):
                 student_name = doc.get("student_name")
                 # Intentar obtener el nombre de la métrica/factor/indicador
                 item_name = doc.get("metric_name") or doc.get("factor_name") or doc.get("indicator_name") or doc.get("name", "documento")
-                
-                logging.info(f"   ❌ Eliminando '{item_name}' del estudiante '{student_name}'")
+            
                 collection.delete_one({"_id": doc["_id"]})
                 deleted_count += 1
-            
-            if deleted_count > 0:
-                logging.info(f"   ✅ Eliminados {deleted_count} documentos huérfanos de '{collection_name}'")
 
 def run_daily_refresh() -> None:
     '''Function to run the daily refresh of events.'''
