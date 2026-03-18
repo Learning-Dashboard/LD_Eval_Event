@@ -56,7 +56,7 @@ def compute_metric_for_student(
 
     if not doc:
         final_val = 0.0
-        logger.warning(f"No aggregator results, setting final_val to 0.0")
+        logger.warning("No aggregator results, setting final_val to 0.0")
     else:
         # Evaluate the formula against the aggregation result
         final_val = evaluate_formula(formula_str, doc)

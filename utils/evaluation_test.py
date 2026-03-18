@@ -1,6 +1,5 @@
 # app.py
-import threading
-from flask import Flask, request, jsonify
+from flask import Flask
 import logging
 import os
 
@@ -8,7 +7,6 @@ from logic.metrics_logic.metric_event_mapping import build_metrics_index_per_qm
 
 from logic.factors_logic.factor_event_mapping import build_factors_index_per_qm
 
-from logic.metrics_logic.metric_event_mapping import build_metrics_index_per_qm
 from logic.metrics_logic.metric_recalculation import (
     compute_metric_for_student,
     compute_metric_for_team,
@@ -21,14 +19,12 @@ from logic.indicators_logic.indicator_event_mapping import build_indicators_inde
 from config.load_config_file import get_event_meta
 from config.logger_config import setup_logging
 from API_calls.StudentDatafromLDRESTAPI import build_team_students_map
-from config.quality_model_config import load_qualitymodel_map, choose_qualitymodel
+from config.quality_model_config import load_qualitymodel_map
 
 
 from pymongo import MongoClient
 
 
-from config.logger_config import setup_logging
-import logging
 
 setup_logging()
 logger = logging.getLogger(__name__)

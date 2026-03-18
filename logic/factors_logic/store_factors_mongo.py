@@ -1,7 +1,6 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import os
-import itertools
 
 from database.mongo_client import get_collection
 

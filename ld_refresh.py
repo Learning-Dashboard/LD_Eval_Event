@@ -1,8 +1,10 @@
-import os, logging, requests
+import os
+import logging
+import requests
 import time
 from API_calls.StudentDatafromLDRESTAPI import build_team_students_map
 from config.quality_model_config import load_qualitymodel_map, choose_qualitymodel
-from config.load_config_file import get_event_meta, get_available_events
+from config.load_config_file import get_available_events
 from database.mongo_client import db
 
 API_URL = os.getenv("EVAL_API_URL", "http://localhost:5001/api/event")
