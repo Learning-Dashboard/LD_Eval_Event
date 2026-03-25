@@ -1,3 +1,4 @@
+from asyncio.log import logger
 import os
 import logging
 import requests
@@ -37,6 +38,9 @@ def trigger_team_event(team_id: str, event_type: str) -> None:
         API_URL, json=payload, timeout=(0.2, 1)
     )  # connect timeout 0.2s, read timeout 1s
 
+    logger.info(
+        f"Triggered event {event_type} for team {team_id} with status code {r.status_code} in {time.perf_counter() - start:.2f} seconds."
+    )
 
 def delete_orphan_collections_from_mongo(actual_teams):
     for prefix in [
@@ -84,9 +88,9 @@ def delete_orphan_student_documents(team_students_map):
 
             deleted_count = 0
             for doc in orphan_docs:
-                student_name = doc.get("student_name")
+                doc.get("student_name")
                 # Intentar obtener el nombre de la métrica/factor/indicador
-                item_name = (
+                (
                     doc.get("metric_name")
                     or doc.get("factor_name")
                     or doc.get("indicator_name")

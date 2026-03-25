@@ -23,7 +23,10 @@ from config.quality_model_config import load_qualitymodel_map
 
 
 from pymongo import MongoClient
-
+from indicators_logic.indicator_recalculation import (
+    compute_indicator,
+    latest_factor_value,
+)
 
 
 setup_logging()
@@ -122,11 +125,6 @@ for factor_def in triggered_factors:
 triggered_indicators = EVENT_INDICATORS_BY_QM.get(quality_model, {}).get(event_type, [])
 logger.info(f"Triggered factors: {[f['name'] for f in triggered_indicators]}")
 
-
-from indicators_logic.indicator_recalculation import (
-    compute_indicator,
-    latest_factor_value,
-)
 
 for indicator_def in triggered_indicators:
     indicator_values = {}  # Empty dictionary to store the values for each metric in the factor

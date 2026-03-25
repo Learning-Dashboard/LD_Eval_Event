@@ -130,6 +130,7 @@ def background_process_event(event_data):
             f"Values of the metrics of factor {factor_def['name']}: {factor_values}"
         )
         final_value_factors = compute_factor(external_id, factor_def, factor_values)
+        logger.info(f"Final value of factor {factor_def['name']}: {final_value_factors}")
 
     # RECALCULTION OF THE INDICATORS
     triggered_indicators = EVENT_INDICATORS_BY_QM.get(quality_model, {}).get(
@@ -152,6 +153,7 @@ def background_process_event(event_data):
         final_value_indicator = compute_indicator(
             external_id, indicator_def, indicator_values
         )
+        logger.info(f"Final value of indicator {indicator_def['name']}: {final_value_indicator}")
 
     logger.info("Done processing event.")
 
