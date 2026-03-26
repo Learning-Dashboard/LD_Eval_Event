@@ -30,6 +30,9 @@ def scan_quality_model_folder(root_dir, subfolder, props_loader, build_def):
             for fname in [f for f in files if f.endswith(".properties")]: # Only .properties files
                 fpath  = os.path.join(dirpath, fname)
                 props  = props_loader(fpath) # Load properties using the provided loader function
+                # Ignore metrics that are not enabled
+                if props.get("enabled", "true").strip().lower() == "false":
+                    continue
                 dfn    = build_def(props, qm.lower(), fpath)
                 defs.append(dfn)
                 # Index by each relatedEvent
