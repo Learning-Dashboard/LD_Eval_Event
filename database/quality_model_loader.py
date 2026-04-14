@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
-  
+
+
 def scan_quality_model_folder(root_dir, subfolder, props_loader, build_def):
     """
     Scanner for quality-model directories.
@@ -16,10 +17,10 @@ def scan_quality_model_folder(root_dir, subfolder, props_loader, build_def):
     for qm in os.listdir(root_dir):
         qm_path = os.path.join(root_dir, qm)
         if not os.path.isdir(qm_path):
-            continue # Skip if not a directory
+            continue  # Skip if not a directory
 
         # Look for the specified subfolder (e.g., "metrics", "factors", "indicators")
-        folder = os.path.join(qm_path, subfolder)      # p.ej.  QUALITY_MODELS/AWS/metrics
+        folder = os.path.join(qm_path, subfolder)  # p.ej.  QUALITY_MODELS/AWS/metrics
         if not os.path.isdir(folder):
             continue
 
