@@ -28,14 +28,13 @@ def scan_quality_model_folder(root_dir, subfolder, props_loader, build_def):
 
         # Walk through all .properties files in subfolder tree
         for dirpath, _, files in os.walk(folder):
-            for fname in [
-                f for f in files if f.endswith(".properties")
-            ]:  # Only .properties files
-                fpath = os.path.join(dirpath, fname)
-                props = props_loader(
-                    fpath
-                )  # Load properties using the provided loader function
-                dfn = build_def(props, qm.lower(), fpath)
+            for fname in [f for f in files if f.endswith(".properties")]: # Only .properties files
+                fpath  = os.path.join(dirpath, fname)
+                props  = props_loader(fpath) # Load properties using the provided loader function
+                # Ignore metrics that are not enabled
+                if props.get("enabled", "true").strip().lower() == "false":
+                    continue
+                dfn    = build_def(props, qm.lower(), fpath)
                 defs.append(dfn)
                 # Index by each relatedEvent
                 for evt in props.get("relatedEvent", "").split(","):

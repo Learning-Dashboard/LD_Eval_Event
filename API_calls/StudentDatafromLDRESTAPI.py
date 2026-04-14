@@ -1,17 +1,33 @@
 import requests
+import time
+import logging
 from config.settings import BASE_GESSI_URL
 
+logger = logging.getLogger(__name__)
 
 def fetch_projects() -> list:
     """
     Retrieve the list of projects from the LD REST API.
     """
     url = f"{BASE_GESSI_URL}/projects"
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()  # Raise an exception if status != 200
-    projects = response.json()
-
-    return projects
+    
+    max_retries = 5
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=60)
+            response.raise_for_status()  # Raise an exception if status != 200
+            projects = response.json()
+            return projects
+        except requests.RequestException as e:
+            logger.warning(f"Attempt {attempt + 1}/{max_retries} failed to fetch projects from {url}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+            else:
+                logger.error(f"All {max_retries} attempts failed to fetch projects.")
+                raise e
+    return []
 
 
 def fetch_project_details(project_id: int) -> dict:
@@ -19,7 +35,8 @@ def fetch_project_details(project_id: int) -> dict:
     Retrieve detailed information for a given project ID.
     """
     url = f"{BASE_GESSI_URL}/projects/{project_id}"
-    response = requests.get(url, timeout=10)
+    # Use increased timeout here as well
+    response = requests.get(url, timeout=60)
     response.raise_for_status()
     return response.json()
 

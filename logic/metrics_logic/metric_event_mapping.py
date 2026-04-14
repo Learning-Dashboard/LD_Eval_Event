@@ -6,15 +6,7 @@ def load_required_fields_metrics(filepath: str) -> dict:
     """
     Reads some keys from the .properties metrics files. Returns a dict with those fields
     """
-    allowed_keys = {
-        "name",
-        "relatedEvent",
-        "scope",
-        "metric",
-        "description",
-        "factors",
-        "weights",
-    }
+    allowed_keys = {'name', 'relatedEvent', 'scope', 'metric','description','factors','weights','enabled'}
     props = {}
     params = {}
 

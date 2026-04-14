@@ -1,7 +1,26 @@
 [
   {
     "$match": {
-      "milestone_closed": false
+      "$expr": {
+        "$and": [
+          { "$eq": [ { "$type": "$estimated_start" }, "string" ] },
+          { "$eq": [ { "$type": "$estimated_finish" }, "string" ] },
+          { "$ne": [ "$estimated_start", "" ] },
+          { "$ne": [ "$estimated_finish", "" ] },
+          {
+            "$lte": [
+              { "$dateFromString": { "dateString": "$estimated_start", "onError": null, "onNull": null } },
+              "$$NOW"
+            ]
+          },
+          {
+            "$gte": [
+              { "$dateFromString": { "dateString": "$estimated_finish", "onError": null, "onNull": null } },
+              "$$NOW"
+            ]
+          }
+        ]
+      }
     }
   },
   {
