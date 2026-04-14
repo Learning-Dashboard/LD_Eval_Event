@@ -272,7 +272,10 @@ def get_students_map():
 
 def run_app():
     # Runs the Flask app
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    host = os.getenv("FLASK_HOST", "127.0.0.1")
+    port = int(os.getenv("FLASK_PORT", "5001"))
+    debug = os.getenv("FLASK_DEBUG", "").lower() in {"1", "true", "yes", "on"}
+    app.run(host=host, port=port, debug=debug)
 
 
 def create_app():
