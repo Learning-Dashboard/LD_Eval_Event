@@ -20,4 +20,4 @@ EXPOSE 5001
 ENV TZ=Europe/Madrid
 
 # Run gunicorn for  "app:create_app()" factory function
-CMD ["gunicorn", "-k", "gthread", "--bind", "0.0.0.0:5001", "--workers", "4", "--threads", "25",  "app:create_app()"]
+CMD ["gunicorn", "-k", "gthread", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "25",  "app:create_app()"]
