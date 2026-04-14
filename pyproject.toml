@@ -1,0 +1,29 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = [
+  "env",
+  ".git",
+  ".pytest_cache",
+  "__pycache__",
+]
+
+[tool.coverage.run]
+branch = true
+omit = [
+  "env/*",
+  "tests/*",
+  "utils/evaluation_test.py",
+]
+
+[tool.coverage.report]
+omit = [
+  "env/*",
+  "tests/*",
+  "utils/evaluation_test.py",
+]
+
+[tool.ruff]
+exclude = ["env"]
+
+[tool.bandit]
+exclude_dirs = ["env"]
