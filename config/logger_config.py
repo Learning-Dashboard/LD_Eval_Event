@@ -4,6 +4,7 @@ import logging
 
 _DEFAULT_FMT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 
+
 def setup_logging() -> None:
     """
     Configure the logger.

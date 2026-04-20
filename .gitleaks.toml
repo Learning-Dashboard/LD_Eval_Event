@@ -1,0 +1,10 @@
+title = "LD Eval Event gitleaks overrides"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore local virtualenv files"
+paths = [
+  '''^env/''',
+]
