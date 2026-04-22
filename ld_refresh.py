@@ -5,7 +5,7 @@ import requests
 import time
 from API_calls.StudentDatafromLDRESTAPI import build_team_students_map
 from config.quality_model_config import load_qualitymodel_map, choose_qualitymodel
-from config.load_config_file import get_available_events
+from config.load_config_file import get_available_events, get_event_meta
 from database.mongo_client import db
 
 API_URL = os.getenv("EVAL_API_URL", "http://localhost:5001/api/event")
@@ -85,12 +85,22 @@ def delete_orphan_student_documents(team_students_map):
         all_valid_students = list(dict.fromkeys(
             sources.get("EXCEL", []) + sources.get("GITHUB", []) + sources.get("TAIGA", [])
         ))
+
+        try:
+            collections = db.list_collection_names()
+        except Exception as exc:
+            logging.warning(
+                "Skipping orphan student cleanup for %s because Mongo is unavailable: %s",
+                team_id,
+                exc,
+            )
+            return
         
         # Limpiar en cada tipo de colección
         for prefix in ["metrics", "factors", "strategic_indicators"]:
             collection_name = f"{prefix}.{team_id}"
 
-            if collection_name not in db.list_collection_names():
+            if collection_name not in collections:
                 continue
 
             collection = db[collection_name]
