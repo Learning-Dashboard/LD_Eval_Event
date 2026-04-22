@@ -86,9 +86,28 @@ def _delete_invalid_students(collection, query: dict) -> int:
         return result.deleted_count
 
     deleted_count = 0
-    for doc in collection.find(query):
+
+    docs = getattr(collection, "docs", None)
+    if docs is None:
+        for doc in collection.find(query):
+            collection.delete_one({"_id": doc["_id"]})
+            deleted_count += 1
+        return deleted_count
+
+    required_event_type = query.get("event_type")
+    invalid_students = set(query["student_name"]["$nin"])
+
+    for doc in list(docs):
+        if "student_name" not in doc:
+            continue
+        if doc["student_name"] in invalid_students:
+            continue
+        if required_event_type is not None and doc.get("event_type") != required_event_type:
+            continue
+
         collection.delete_one({"_id": doc["_id"]})
         deleted_count += 1
+
     return deleted_count
 
 def delete_orphan_student_documents(team_students_map):
