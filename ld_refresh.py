@@ -102,8 +102,16 @@ def _delete_invalid_students(collection, query: dict) -> int:
             continue
         if doc["student_name"] in invalid_students:
             continue
-        if required_event_type is not None and doc.get("event_type") != required_event_type:
-            continue
+
+        if isinstance(required_event_type, dict):
+            exists_expected = required_event_type.get("$exists")
+            if exists_expected is not None:
+                has_event_type = "event_type" in doc
+                if bool(has_event_type) != bool(exists_expected):
+                    continue
+        elif required_event_type is not None:
+            if doc.get("event_type") != required_event_type:
+                continue
 
         collection.delete_one({"_id": doc["_id"]})
         deleted_count += 1
