@@ -73,6 +73,24 @@ def _valid_students_for_event(team_sources: dict, event_type: str) -> list:
     # Keep deterministic order while removing duplicates
     return list(dict.fromkeys(valid))
 
+
+def _delete_invalid_students(collection, query: dict) -> int:
+    """
+    Delete documents that match the query.
+
+    Prefer delete_many on real Mongo collections, but fall back to the
+    test double API used in the unit tests.
+    """
+    if hasattr(collection, "delete_many"):
+        result = collection.delete_many(query)
+        return result.deleted_count
+
+    deleted_count = 0
+    for doc in collection.find(query):
+        collection.delete_one({"_id": doc["_id"]})
+        deleted_count += 1
+    return deleted_count
+
 def delete_orphan_student_documents(team_students_map):
     """
     Elimina documentos de estudiantes que ya no existen en el mapa de estudiantes.
@@ -113,18 +131,16 @@ def delete_orphan_student_documents(team_students_map):
                 if not valid_for_event:
                     continue
 
-                result = collection.delete_many({
+                deleted_count += _delete_invalid_students(collection, {
                     "student_name": {"$exists": True, "$nin": valid_for_event},
                     "event_type": event_type
                 })
-                deleted_count += result.deleted_count
 
             # 2) Legacy docs without event_type: apply broad fallback validation
-            legacy_result = collection.delete_many({
+            deleted_count += _delete_invalid_students(collection, {
                 "student_name": {"$exists": True, "$nin": all_valid_students},
                 "event_type": {"$exists": False}
             })
-            deleted_count += legacy_result.deleted_count
 
             if deleted_count > 0:
                 logging.info("Deleted %s orphan student documents from %s", deleted_count, collection_name)
