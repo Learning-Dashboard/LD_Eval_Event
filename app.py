@@ -282,7 +282,8 @@ def create_app():
     """
     Create and configure the Flask application.
     """
-    return app  # ← la variable que ya tienes arriba
+    start_scheduler()
+    return app
 
 
 if __name__ == "__main__":
