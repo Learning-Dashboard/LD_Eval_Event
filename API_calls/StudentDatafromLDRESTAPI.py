@@ -1,9 +1,11 @@
 import requests
 import time
 import logging
-from config.settings import BASE_GESSI_URL
+from config.settings import BASE_GESSI_URL, LD_API_KEY, LD_API_KEY_HEADER
 
 logger = logging.getLogger(__name__)
+
+LD_HEADERS = {LD_API_KEY_HEADER: LD_API_KEY}
 
 def fetch_projects() -> list:
     """
@@ -16,7 +18,7 @@ def fetch_projects() -> list:
     
     for attempt in range(max_retries):
         try:
-            response = requests.get(url, timeout=60)
+            response = requests.get(url, headers=LD_HEADERS, timeout=60)
             response.raise_for_status()  # Raise an exception if status != 200
             projects = response.json()
             return projects
@@ -36,7 +38,7 @@ def fetch_project_details(project_id: int) -> dict:
     """
     url = f"{BASE_GESSI_URL}/projects/{project_id}"
     # Use increased timeout here as well
-    response = requests.get(url, timeout=60)
+    response = requests.get(url, headers=LD_HEADERS, timeout=60)
     response.raise_for_status()
     return response.json()
 
