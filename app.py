@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, request, jsonify
 import logging
 from datetime import datetime
@@ -47,6 +48,9 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+_executor = ThreadPoolExecutor(max_workers=10)
+_map_lock = threading.Lock()
+
 # Build the metrics event map at startup scaning all the quality models metrics subfolders
 ALL_METRICS_BY_QM, EVENT_METRICS_BY_QM = build_metrics_index_per_qm(QUALITY_MODELS_DIR)
 
@@ -87,7 +91,8 @@ def background_process_event(event_data):
 
     # Retrieve the students for that team with the corresponding data source
     data_source = meta["data_source"]
-    students = TEAM_STUDENTS_MAP.get(external_id, {}).get(data_source, [])
+    with _map_lock:
+        students = TEAM_STUDENTS_MAP.get(external_id, {}).get(data_source, [])
     logger.info(
         f"Event={event_type}, team with external_id={external_id}, students={students}, quality_model={quality_model}"
     )
@@ -182,10 +187,7 @@ def handle_event():
     3) spawns a background thread to do metric recalculation
     """
     event_data = request.get_json(force=True)
-    # Spawn a background thread
-    t = threading.Thread(target=background_process_event, args=(event_data,))
-    t.start()
-
+    _executor.submit(background_process_event, event_data)
     return jsonify({"status": "received"}), 200
 
 
@@ -204,27 +206,24 @@ def handle_refresh():
         logger.info("🔄 REFRESH INICIAT")
         logger.info("=" * 80)
 
-        # Mostrar mapa ABANS del refresh
-        logger.info("📋 MAPA ABANS DEL REFRESH:")
-        for team_id, sources in TEAM_STUDENTS_MAP.items():
-            excel_students = sources.get("EXCEL", [])
-            logger.info(f"  - {team_id}: {len(excel_students)} estudiants (EXCEL)")
+        with _map_lock:
+            logger.info("📋 MAPA ABANS DEL REFRESH:")
+            for team_id, sources in TEAM_STUDENTS_MAP.items():
+                excel_students = sources.get("EXCEL", [])
+                logger.info(f"  - {team_id}: {len(excel_students)} estudiants (EXCEL)")
 
-        # CRÍTICO: Reconstruir el mapa global desde PostgreSQL
-        logger.info("🔄 Reconstruint TEAM_STUDENTS_MAP des de PostgreSQL...")
-        TEAM_STUDENTS_MAP = build_team_students_map()
+            logger.info("🔄 Reconstruint TEAM_STUDENTS_MAP des de PostgreSQL...")
+            TEAM_STUDENTS_MAP = build_team_students_map()
 
-        # Mostrar mapa DESPRÉS del refresh
-        logger.info("✅ MAPA DESPRÉS DEL REFRESH:")
-        for team_id, sources in TEAM_STUDENTS_MAP.items():
-            excel_students = sources.get("EXCEL", [])
-            logger.info(f"  - {team_id}: {len(excel_students)} estudiants (EXCEL)")
+            logger.info("✅ MAPA DESPRÉS DEL REFRESH:")
+            for team_id, sources in TEAM_STUDENTS_MAP.items():
+                excel_students = sources.get("EXCEL", [])
+                logger.info(f"  - {team_id}: {len(excel_students)} estudiants (EXCEL)")
 
-        logger.info("=" * 80)
-        logger.info(f"✅ Mapa actualitzat amb {len(TEAM_STUDENTS_MAP)} equips")
-        logger.info("=" * 80)
+            logger.info("=" * 80)
+            logger.info(f"✅ Mapa actualitzat amb {len(TEAM_STUDENTS_MAP)} equips")
+            logger.info("=" * 80)
 
-        # Executar refresh diari (recalcular totes les mètriques)
         logger.info("🔄 Executant recàlcul de mètriques...")
         run_daily_refresh()
         logger.info("✅ Refresh completat")
@@ -233,7 +232,7 @@ def handle_refresh():
             json.dumps(TEAM_STUDENTS_MAP, indent=2, ensure_ascii=False),
         )
 
-    threading.Thread(target=refresh_and_update_map).start()
+    _executor.submit(refresh_and_update_map)
     return jsonify({"status": "refresh started"}), 200
 
 

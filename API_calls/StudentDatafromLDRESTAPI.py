@@ -1,9 +1,15 @@
 import requests
+from requests.adapters import HTTPAdapter
 import time
 import logging
 from config.settings import BASE_GESSI_URL
 
 logger = logging.getLogger(__name__)
+
+_session = requests.Session()
+_adapter = HTTPAdapter(pool_connections=2, pool_maxsize=5)
+_session.mount("http://", _adapter)
+_session.mount("https://", _adapter)
 
 def fetch_projects() -> list:
     """
@@ -16,7 +22,7 @@ def fetch_projects() -> list:
     
     for attempt in range(max_retries):
         try:
-            response = requests.get(url, timeout=60)
+            response = _session.get(url, timeout=60)
             response.raise_for_status()  # Raise an exception if status != 200
             projects = response.json()
             return projects
@@ -36,7 +42,7 @@ def fetch_project_details(project_id: int) -> dict:
     """
     url = f"{BASE_GESSI_URL}/projects/{project_id}"
     # Use increased timeout here as well
-    response = requests.get(url, timeout=60)
+    response = _session.get(url, timeout=60)
     response.raise_for_status()
     return response.json()
 
