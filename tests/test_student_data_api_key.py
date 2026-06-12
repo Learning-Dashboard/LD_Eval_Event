@@ -10,15 +10,11 @@ def test_fetch_projects_sends_ld_api_key(monkeypatch):
     mock_get = Mock(return_value=response)
 
     monkeypatch.setattr(student_api, "BASE_GESSI_URL", "http://tomcat:8080/api")
-    monkeypatch.setattr(student_api, "LD_HEADERS", {"X-LD-API-Key": "test-ld-api-key"})
-    monkeypatch.setattr(student_api.requests, "get", mock_get)
+    monkeypatch.setattr(student_api._session, "get", mock_get)
 
     assert student_api.fetch_projects() == []
-    mock_get.assert_called_once_with(
-        "http://tomcat:8080/api/projects",
-        headers={"X-LD-API-Key": "test-ld-api-key"},
-        timeout=60,
-    )
+    mock_get.assert_called_once_with("http://tomcat:8080/api/projects", timeout=60)
+    assert student_api._session.headers.get("X-LD-API-Key") is not None
 
 
 def test_fetch_project_details_sends_ld_api_key(monkeypatch):
@@ -28,12 +24,8 @@ def test_fetch_project_details_sends_ld_api_key(monkeypatch):
     mock_get = Mock(return_value=response)
 
     monkeypatch.setattr(student_api, "BASE_GESSI_URL", "http://tomcat:8080/api")
-    monkeypatch.setattr(student_api, "LD_HEADERS", {"X-LD-API-Key": "test-ld-api-key"})
-    monkeypatch.setattr(student_api.requests, "get", mock_get)
+    monkeypatch.setattr(student_api._session, "get", mock_get)
 
     assert student_api.fetch_project_details(1) == {"id": 1}
-    mock_get.assert_called_once_with(
-        "http://tomcat:8080/api/projects/1",
-        headers={"X-LD-API-Key": "test-ld-api-key"},
-        timeout=60,
-    )
+    mock_get.assert_called_once_with("http://tomcat:8080/api/projects/1", timeout=60)
+    assert student_api._session.headers.get("X-LD-API-Key") is not None
