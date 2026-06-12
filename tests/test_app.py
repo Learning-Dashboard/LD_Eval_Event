@@ -82,16 +82,14 @@ def test_handle_event_returns_200_and_starts_thread(app_module, monkeypatch):
     payload = {"event_type": "push", "prj": "team-1", "author_login": "alice"}
     started = {}
 
-    class FakeThread:
-        def __init__(self, target, args=(), kwargs=None):
-            started["target"] = target
+    class FakeExecutor:
+        def submit(self, fn, *args, **kwargs):
+            started["target"] = fn
             started["args"] = args
-            started["kwargs"] = kwargs or {}
-
-        def start(self):
+            started["kwargs"] = kwargs
             started["started"] = True
 
-    monkeypatch.setattr(app_module.threading, "Thread", FakeThread)
+    monkeypatch.setattr(app_module, "_executor", FakeExecutor())
 
     response = app_module.app.test_client().post("/api/event", json=payload)
 
@@ -209,16 +207,11 @@ def test_handle_refresh_rebuilds_students_map_and_runs_refresh(app_module, monke
     }
     refresh_calls = []
 
-    class FakeThread:
-        def __init__(self, target, args=(), kwargs=None):
-            self.target = target
-            self.args = args
-            self.kwargs = kwargs or {}
+    class FakeExecutor:
+        def submit(self, fn, *args, **kwargs):
+            fn(*args, **kwargs)
 
-        def start(self):
-            self.target(*self.args, **self.kwargs)
-
-    monkeypatch.setattr(app_module.threading, "Thread", FakeThread)
+    monkeypatch.setattr(app_module, "_executor", FakeExecutor())
     monkeypatch.setattr(
         app_module,
         "build_team_students_map",
