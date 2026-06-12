@@ -1,9 +1,9 @@
 [
   {
     "$match": {
-      "user.login": {
-        "$ne": "anonymous"
-      }
+      "user.login": { "$ne": "anonymous" },
+      "is_merge": { "$ne": true },
+      "stats.total": { "$lte": 5000 }
     }
   },
   {
