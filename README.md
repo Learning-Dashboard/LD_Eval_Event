@@ -98,10 +98,11 @@ docker compose up -d --build ld_eval
 | `MONGO_USER` / `MONGO_PASS` | Credentials (leave blank for local dev) |
 | `MONGO_AUTHSRC` | Auth DB (usually `admin`) |
 | `BASE_GESSI_URL` | REST endpoint of the public dashboard |
+| `LD_API_KEY` | Shared Learning Dashboard API key sent as `X-LD-API-Key` |
 | `QUALITY_MODELS_DIR` | Path to `QUALITY_MODELS` folder |
 | Scheduler: `_Start_scheduler_date`, `_End_scheduler_date`, `_Hour_scheduler` … | Daily refresh window (see `config_files/config_variables.py`) |
 
-All vars can be placed in `.env` and are loaded automatically.
+All vars can be placed in `.env` and are loaded automatically. Generate `LD_API_KEY` once from the repository root with `python3 -c 'import secrets; print(secrets.token_urlsafe(48))'` and copy the same value into local consumer `.env` files when running outside Docker.
 
 ---
 

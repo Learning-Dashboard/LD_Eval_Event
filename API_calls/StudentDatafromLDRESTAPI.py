@@ -2,7 +2,7 @@ import requests
 from requests.adapters import HTTPAdapter
 import time
 import logging
-from config.settings import BASE_GESSI_URL
+from config.settings import BASE_GESSI_URL, LD_API_KEY, LD_API_KEY_HEADER
 
 logger = logging.getLogger(__name__)
 
@@ -10,16 +10,17 @@ _session = requests.Session()
 _adapter = HTTPAdapter(pool_connections=2, pool_maxsize=5)
 _session.mount("http://", _adapter)
 _session.mount("https://", _adapter)
+_session.headers.update({LD_API_KEY_HEADER: LD_API_KEY})
 
 def fetch_projects() -> list:
     """
     Retrieve the list of projects from the LD REST API.
     """
     url = f"{BASE_GESSI_URL}/projects"
-    
+
     max_retries = 5
     retry_delay = 5
-    
+
     for attempt in range(max_retries):
         try:
             response = _session.get(url, timeout=60)
@@ -41,7 +42,6 @@ def fetch_project_details(project_id: int) -> dict:
     Retrieve detailed information for a given project ID.
     """
     url = f"{BASE_GESSI_URL}/projects/{project_id}"
-    # Use increased timeout here as well
     response = _session.get(url, timeout=60)
     response.raise_for_status()
     return response.json()
